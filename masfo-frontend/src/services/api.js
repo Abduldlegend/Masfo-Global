@@ -101,24 +101,32 @@
 
 // export default api;
 
-import axios from 'axios';
+import axios from "axios";
 
 // Get API URL from environment variables
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 // Create axios instance
+// const api = axios.create({
+//   baseURL: API_BASE_URL,
+//   headers: {
+//     'Content-Type': 'application/json',
+//   },
+//   withCredentials: false,
+// });
+
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: `${API_BASE_URL}/api`,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
-  withCredentials: false,
 });
 
 // Request interceptor - Add token to every request
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem("accessToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -126,7 +134,7 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor - Handle token expiration
@@ -134,79 +142,82 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      
-      const refreshToken = localStorage.getItem('refreshToken');
+
+      const refreshToken = localStorage.getItem("refreshToken");
       if (refreshToken) {
         try {
           const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-            refreshToken
+            refreshToken,
           });
-          
-          localStorage.setItem('accessToken', response.data.accessToken);
+
+          localStorage.setItem("accessToken", response.data.accessToken);
           originalRequest.headers.Authorization = `Bearer ${response.data.accessToken}`;
           return api(originalRequest);
         } catch (refreshError) {
           localStorage.clear();
-          window.location.href = '/login';
+          window.location.href = "/login";
           return Promise.reject(refreshError);
         }
       } else {
         localStorage.clear();
-        window.location.href = '/login';
+        window.location.href = "/login";
       }
     }
-    
+
     return Promise.reject(error);
-  }
+  },
 );
 
 // ============ AUTH APIS ============
 export const authAPI = {
-  register: (userData) => api.post('/auth/register', userData),
-  login: (credentials) => api.post('/auth/login', credentials),
-  getMe: () => api.get('/auth/me'),
-  logout: () => api.post('/auth/logout'),
+  register: (userData) => api.post("/auth/register", userData),
+  login: (credentials) => api.post("/auth/login", credentials),
+  getMe: () => api.get("/auth/me"),
+  logout: () => api.post("/auth/logout"),
 };
 
 // ============ COURSE APIS ============
 export const courseAPI = {
-  getAll: (params = {}) => api.get('/courses', { params }),
+  getAll: (params = {}) => api.get("/courses", { params }),
   getBySlug: (slug) => api.get(`/courses/${slug}`),
   enroll: (courseId) => api.post(`/courses/${courseId}/enroll`),
-  getMyEnrollments: () => api.get('/courses/my-enrollments'),
-  updateProgress: (courseId, data) => api.put(`/courses/${courseId}/progress`, data),
+  getMyEnrollments: () => api.get("/courses/my-enrollments"),
+  updateProgress: (courseId, data) =>
+    api.put(`/courses/${courseId}/progress`, data),
 };
 
 // ============ JOB APIS ============
 export const jobAPI = {
-  getAll: (params = {}) => api.get('/jobs', { params }),
+  getAll: (params = {}) => api.get("/jobs", { params }),
   getBySlug: (slug) => api.get(`/jobs/${slug}`),
   saveJob: (jobId) => api.post(`/jobs/${jobId}/save`),
-  getSavedJobs: () => api.get('/jobs/saved'),
+  getSavedJobs: () => api.get("/jobs/saved"),
 };
 
 // ============ APPLICATION APIS ============
 export const applicationAPI = {
-  submit: (jobId, formData) => api.post(`/applications/${jobId}/submit`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
-  getMyApplications: () => api.get('/applications/my-applications'),
+  submit: (jobId, formData) =>
+    api.post(`/applications/${jobId}/submit`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  getMyApplications: () => api.get("/applications/my-applications"),
 };
 
 // ============ CONTACT APIS ============
 export const contactAPI = {
-  submit: (data) => api.post('/contact/submit', data),
+  submit: (data) => api.post("/contact/submit", data),
 };
 
 // ============ USER APIS ============
 export const userAPI = {
-  updateProfile: (data) => api.put('/users/profile', data),
-  uploadAvatar: (formData) => api.post('/users/avatar', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
+  updateProfile: (data) => api.put("/users/profile", data),
+  uploadAvatar: (formData) =>
+    api.post("/users/avatar", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
 };
 
 export default api;
