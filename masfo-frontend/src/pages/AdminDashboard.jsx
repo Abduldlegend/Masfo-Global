@@ -8,6 +8,9 @@ import {
 } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
+import { AdminModal } from '../components/admin/AdminModal';
+import { CourseForm } from '../components/admin/CourseForm';
+import { JobForm } from '../components/admin/JobForm';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 
@@ -20,6 +23,7 @@ export const AdminDashboard = () => {
   const [contacts, setContacts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState(''); // 'course' or 'job'
   const [editingItem, setEditingItem] = useState(null);
   const navigate = useNavigate();
 
@@ -76,6 +80,24 @@ export const AdminDashboard = () => {
     }
   };
 
+  const handleEdit = (type, item) => {
+    setEditingItem(item);
+    setModalType(type);
+    setShowModal(true);
+  };
+
+  const handleAdd = (type) => {
+    setEditingItem(null);
+    setModalType(type);
+    setShowModal(true);
+  };
+
+  const handleModalSuccess = () => {
+    setShowModal(false);
+    setEditingItem(null);
+    fetchDashboardData();
+  };
+
   const tabs = [
     { id: 'overview', label: 'Overview', icon: TrendingUp },
     { id: 'courses', label: 'Courses', icon: BookOpen },
@@ -91,6 +113,27 @@ export const AdminDashboard = () => {
       </div>
     );
   }
+
+  const renderModalContent = () => {
+    if (modalType === 'course') {
+      return (
+        <CourseForm
+          course={editingItem}
+          onSuccess={handleModalSuccess}
+          onCancel={() => setShowModal(false)}
+        />
+      );
+    } else if (modalType === 'job') {
+      return (
+        <JobForm
+          job={editingItem}
+          onSuccess={handleModalSuccess}
+          onCancel={() => setShowModal(false)}
+        />
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
@@ -118,7 +161,7 @@ export const AdminDashboard = () => {
           ))}
         </div>
 
-        {/* Overview Tab */}
+        {/* Overview Tab - Same as before */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -195,15 +238,14 @@ export const AdminDashboard = () => {
               </Card>
             </div>
 
-            {/* Quick Actions */}
             <Card className="p-6">
               <h2 className="text-xl font-bold mb-4">Quick Actions</h2>
               <div className="flex flex-wrap gap-4">
-                <Button onClick={() => { setActiveTab('courses'); setShowModal(true); }}>
+                <Button onClick={() => handleAdd('course')}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add New Course
                 </Button>
-                <Button onClick={() => { setActiveTab('jobs'); setShowModal(true); }}>
+                <Button onClick={() => handleAdd('job')}>
                   <Plus className="h-4 w-4 mr-2" />
                   Post New Job
                 </Button>
@@ -212,12 +254,12 @@ export const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Courses Tab */}
+        {/* Courses Tab - With Edit Button */}
         {activeTab === 'courses' && (
           <div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold">Manage Courses</h2>
-              <Button onClick={() => setShowModal(true)}>
+              <Button onClick={() => handleAdd('course')}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Course
               </Button>
@@ -233,7 +275,10 @@ export const AdminDashboard = () => {
                       <p className="text-gray-500 text-sm mt-1 line-clamp-1">{course.description}</p>
                     </div>
                     <div className="flex space-x-2">
-                      <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg">
+                      <button 
+                        onClick={() => handleEdit('course', course)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                      >
                         <Edit className="h-5 w-5" />
                       </button>
                       <button 
@@ -250,12 +295,12 @@ export const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Jobs Tab */}
+        {/* Jobs Tab - With Edit Button */}
         {activeTab === 'jobs' && (
           <div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold">Manage Jobs</h2>
-              <Button onClick={() => setShowModal(true)}>
+              <Button onClick={() => handleAdd('job')}>
                 <Plus className="h-4 w-4 mr-2" />
                 Post Job
               </Button>
@@ -271,7 +316,10 @@ export const AdminDashboard = () => {
                       <p className="text-gray-500 text-sm mt-1 line-clamp-1">{job.description}</p>
                     </div>
                     <div className="flex space-x-2">
-                      <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg">
+                      <button 
+                        onClick={() => handleEdit('job', job)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                      >
                         <Edit className="h-5 w-5" />
                       </button>
                       <button 
@@ -288,7 +336,7 @@ export const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Users Tab */}
+        {/* Users Tab - Same as before */}
         {activeTab === 'users' && (
           <div>
             <h2 className="text-2xl font-bold mb-6">Manage Users</h2>
@@ -311,7 +359,10 @@ export const AdminDashboard = () => {
                       <p className="text-gray-500 text-sm">{user.phone || 'No phone'}</p>
                     </div>
                     <div className="flex space-x-2">
-                      <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
+                      <button 
+                        onClick={() => handleDelete('users', user._id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                      >
                         <Trash2 className="h-5 w-5" />
                       </button>
                     </div>
@@ -322,7 +373,7 @@ export const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Messages Tab */}
+        {/* Messages Tab - Same as before */}
         {activeTab === 'messages' && (
           <div>
             <h2 className="text-2xl font-bold mb-6">Contact Messages</h2>
@@ -360,18 +411,18 @@ export const AdminDashboard = () => {
         )}
       </div>
 
-      {/* Add/Edit Modal - Simplified for now */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold mb-4">Coming Soon</h2>
-            <p className="text-gray-600 mb-6">Course and job creation forms will be implemented in the next phase.</p>
-            <Button onClick={() => setShowModal(false)} fullWidth>
-              Close
-            </Button>
-          </Card>
-        </div>
-      )}
+      {/* Admin Modal */}
+      <AdminModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={modalType === 'course' 
+          ? `${editingItem ? 'Edit' : 'Add'} Course`
+          : `${editingItem ? 'Edit' : 'Post'} Job`
+        }
+        size="lg"
+      >
+        {renderModalContent()}
+      </AdminModal>
     </div>
   );
 };
